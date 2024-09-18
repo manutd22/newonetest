@@ -3,29 +3,78 @@ import {
   bindMiniAppCSSVars,
   bindThemeParamsCSSVars,
   bindViewportCSSVars,
-  initNavigator, useLaunchParams,
+  initNavigator,
+  useLaunchParams,
   useMiniApp,
   useThemeParams,
   useViewport,
 } from '@telegram-apps/sdk-react';
 import { AppRoot } from '@telegram-apps/telegram-ui';
-import { type FC, useEffect, useMemo } from 'react';
-import {
-  Navigate,
-  Route,
-  Router,
-  Routes,
-} from 'react-router-dom';
+import { FC, useEffect, useMemo, useState, useCallback } from 'react';
+import { Navigate, Route, Router, Routes } from 'react-router-dom';
 import axios from 'axios';
 
+
 import { routes } from '@/navigation/routes.tsx';
-import { API_BASE_URL } from '../config';
+
+const BACKEND_URL = 'https://85e0-78-84-0-200.ngrok-free.app';
+
+const saveTelegramUser = async (initData: string) => {
+  console.log('Attempting to save user data:');
+  console.log('initData:', initData);
+
+  try {
+    const response = await axios.post(`${BACKEND_URL}/users/save-telegram-user`, { 
+      initData
+    }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    console.log('Response status:', response.status);
+    console.log('Response data:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to save user data:', error);
+    throw error;
+  }
+};
 
 export const App: FC = () => {
   const lp = useLaunchParams();
   const miniApp = useMiniApp();
   const themeParams = useThemeParams();
   const viewport = useViewport();
+  const [isDataSaved, setIsDataSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const saveUserData = useCallback(async () => {
+    if (lp.initDataRaw && !isDataSaved) {
+      try {
+        console.log('Launch params:', lp);
+        
+        await saveTelegramUser(lp.initDataRaw);
+        setIsDataSaved(true);
+        console.log('User data saved successfully');
+      } catch (error) {
+        console.error('Error saving user data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (!lp.initDataRaw) {
+      console.warn('initDataRaw is empty or undefined');
+      setIsLoading(false);
+    }
+  }, [lp, isDataSaved]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const startapp = urlParams.get('startapp') || urlParams.get('start');
+    if (startapp) {
+      localStorage.setItem('pendingStartapp', startapp);
+    }
+
+    saveUserData();
+  }, [saveUserData]);
 
   useEffect(() => {
     return bindMiniAppCSSVars(miniApp, themeParams);
@@ -47,28 +96,7 @@ export const App: FC = () => {
     return () => navigator.detach();
   }, [navigator]);
 
-   useEffect(() => {
-    const saveUser = async () => {
-      const user = window.Telegram.WebApp.initDataUnsafe.user;
-      if (user) {
-        try {
-          const response = await axios.post(`${API_BASE_URL}/users`, {
-            telegramId: user.id.toString(),
-            username: user.username,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            languageCode: user.language_code,
-            isPremium: user.is_premium,
-          });
-          console.log('User saved:', response.data);
-        } catch (error) {
-          console.error('Error saving user:', error);
-        }
-      }
-    };
-
-    saveUser();
-  }, []);
+  console.log('Routes:', routes);
 
   const renderRoutes = () => {
     try {
@@ -88,17 +116,20 @@ export const App: FC = () => {
     }
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <AppRoot
-      appearance={miniApp.isDark ? 'dark' : 'light'}
-      platform={['macos', 'ios'].includes(lp.platform) ? 'ios' : 'base'}
-    >
-      <Router location={location} navigator={reactNavigator}>
-        
-          {routes.map((route) => <Route key={route.path} {...route} />)}
+    
+      <AppRoot
+        appearance={miniApp.isDark ? 'dark' : 'light'}
+        platform={['macos', 'ios'].includes(lp.platform) ? 'ios' : 'base'}
+      >
+        <Router location={location} navigator={reactNavigator}>
           {renderRoutes()}
-        
-      </Router>
-    </AppRoot>
+        </Router>
+      </AppRoot>
+    
   );
 };
