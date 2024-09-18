@@ -70,16 +70,34 @@ export const App: FC = () => {
     saveUser();
   }, []);
 
+  const renderRoutes = () => {
+    try {
+      if (!Array.isArray(routes)) {
+        console.error('Routes is not an array:', routes);
+        return null;
+      }
+      return (
+        <Routes>
+          {routes.map((route) => <Route key={route.path} {...route} />)}
+          <Route path='*' element={<Navigate to='/'/>}/>
+        </Routes>
+      );
+    } catch (error) {
+      console.error('Error rendering routes:', error);
+      return <div>An error occurred while loading the app. Please try again later.</div>;
+    }
+  };
+
   return (
     <AppRoot
       appearance={miniApp.isDark ? 'dark' : 'light'}
       platform={['macos', 'ios'].includes(lp.platform) ? 'ios' : 'base'}
     >
       <Router location={location} navigator={reactNavigator}>
-        <Routes>
+        
           {routes.map((route) => <Route key={route.path} {...route} />)}
-          <Route path='*' element={<Navigate to='/'/>}/>
-        </Routes>
+          {renderRoutes()}
+        
       </Router>
     </AppRoot>
   );
