@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "homepage": "https://github.com/manutd22/newonetest",
+  "homepage": "https://manutd22.github.io/newonetest/",
   "scripts": {
     "deploy": "gh-pages -d dist",
     "dev": "vite",
