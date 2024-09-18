@@ -16,8 +16,10 @@ import {
   Router,
   Routes,
 } from 'react-router-dom';
+import axios from 'axios';
 
 import { routes } from '@/navigation/routes.tsx';
+import { API_BASE_URL } from '../config';
 
 export const App: FC = () => {
   const lp = useLaunchParams();
@@ -37,17 +39,36 @@ export const App: FC = () => {
     return viewport && bindViewportCSSVars(viewport);
   }, [viewport]);
 
-  // Create a new application navigator and attach it to the browser history, so it could modify
-  // it and listen to its changes.
   const navigator = useMemo(() => initNavigator('app-navigation-state'), []);
   const [location, reactNavigator] = useIntegration(navigator);
 
-  // Don't forget to attach the navigator to allow it to control the BackButton state as well
-  // as browser history.
   useEffect(() => {
     navigator.attach();
     return () => navigator.detach();
   }, [navigator]);
+
+   useEffect(() => {
+    const saveUser = async () => {
+      const user = window.Telegram.WebApp.initDataUnsafe.user;
+      if (user) {
+        try {
+          const response = await axios.post(`${API_BASE_URL}/users`, {
+            telegramId: user.id.toString(),
+            username: user.username,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            languageCode: user.language_code,
+            isPremium: user.is_premium,
+          });
+          console.log('User saved:', response.data);
+        } catch (error) {
+          console.error('Error saving user:', error);
+        }
+      }
+    };
+
+    saveUser();
+  }, []);
 
   return (
     <AppRoot
