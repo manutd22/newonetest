@@ -15,7 +15,7 @@
     "start:frontend": "vite",
     "start:backend": "cd back && npm run start:dev",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
-    "install:all": "npm install && cd backend && npm install"
+    "install:all": "npm install && cd back && npm install"
   },
   "dependencies": {
     "@telegram-apps/react-router-integration": "^1.0.0",
