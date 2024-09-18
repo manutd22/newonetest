@@ -17,6 +17,10 @@ export default defineConfig({
     // https://www.npmjs.com/package/@vitejs/plugin-basic-ssl
    //basicSsl(),
   ],
+  build: {
+    outDir: 'dist', // Убедитесь, что это соответствует папке, указанной в команде деплоя
+    emptyOutDir: true, // Очищает папку dist перед каждой сборкой
+  },
   publicDir: './public',
   server: {
     // Exposes your dev server and makes it accessible for the devices in the same network.
